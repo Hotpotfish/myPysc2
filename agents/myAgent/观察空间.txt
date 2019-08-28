@@ -1,0 +1,17 @@
+obs_spec = named_array.NamedDict({
+        "action_result": (0,),  # See error.proto: ActionResult.
+        "alerts": (0,),  # See sc2api.proto: Alert.
+        "available_actions": (0,),
+        "build_queue": (0, len(UnitLayer)),  # pytype: disable=wrong-arg-types
+        "cargo": (0, len(UnitLayer)),  # pytype: disable=wrong-arg-types
+        "cargo_slots_available": (1,),
+        "control_groups": (10, 2),
+        "game_loop": (1,),
+        "last_actions": (0,),
+        "multi_select": (0, len(UnitLayer)),  # pytype: disable=wrong-arg-types
+        "player": (len(Player),),  # pytype: disable=wrong-arg-types
+        "score_cumulative": (len(ScoreCumulative),),  # pytype: disable=wrong-arg-types
+        "score_by_category": (len(ScoreByCategory), len(ScoreCategories)),  # pytype: disable=wrong-arg-types
+        "score_by_vital": (len(ScoreByVital), len(ScoreVitals)),  # pytype: disable=wrong-arg-types
+        "single_select": (0, len(UnitLayer)),  # Only (n, 7) for n in (0, 1).  # pytype: disable=wrong-arg-types
+    })
