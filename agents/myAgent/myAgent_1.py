@@ -60,18 +60,19 @@ class myAgent(base_agent.BaseAgent):
     def step(self, obs):
         super(myAgent, self).step(obs)
 
-        # self.inQueue(macro_operation.chooseARandomScv(obs))
+        self.inQueue(macro_operation.chooseARandomScv(obs))
+
         self.inQueue(macro_operation.buildSupplydepot(obs))
 
         self.inQueue(macro_operation.buildBarracks(obs))
 
         self.inQueue(macro_operation.trainMarines(obs))
-
+        self.inQueue(macro_operation.svcBackToWork(obs))
 
         f = self.opperation(obs)
 
-        return f
 
+        return f
 
 
 def main(unused_argv):
@@ -81,13 +82,12 @@ def main(unused_argv):
             with sc2_env.SC2Env(
                     map_name="Simple64",
                     players=[sc2_env.Agent(sc2_env.Race.terran),
-                             sc2_env.Bot(sc2_env.Race.random,
-                                         sc2_env.Difficulty.very_easy)],
-
+                             sc2_env.Bot(sc2_env.Race.random, sc2_env.Difficulty.very_easy)],
                     agent_interface_format=features.AgentInterfaceFormat(
-                        feature_dimensions=features.Dimensions(screen=64, minimap=64)),
-
-                    step_mul=8,
+                        feature_dimensions=features.Dimensions(screen=84, minimap=64),
+                        use_raw_units=True
+                    ,use_feature_units=True),
+                    step_mul=4,
                     game_steps_per_episode=0,
                     realtime=False,
                     visualize=True) as env:

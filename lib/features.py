@@ -1010,7 +1010,7 @@ class Features(object):
           u.weapon_cooldown,
           len(u.orders),
           u.tag if is_raw else 0
-      ), dtype=np.int32)
+      ), dtype=np.int64)
 
     raw = obs.observation.raw_data
 
