@@ -10,6 +10,21 @@ _QUEUED = [1]
 
 screenSize = 83
 
+
+def findAnyEmeies(obs):
+    ran = random.randint(0, 63)
+    enemy_y, enemy_x = (obs.observation['minimap'][features.MINIMAP_FEATURES.player_relative.index] == 4).nonzero()
+    target = [enemy_x[ran], enemy_y[ran]]
+    return target
+
+
+def needFood(obs):
+    if obs.observation['player'][4] != 200 and obs.observation['player'][4] - obs.observation['player'][3] <= 0:
+        return buildSupplydepot(obs)
+    else:
+        return None
+
+
 def chooseARandomPlace(input_x, input_y):
     add_y = random.randint(-20, 20)
     add_x = random.randint(-20, 20)
@@ -57,6 +72,7 @@ def noOP():
 
 
 def svcBackToWork(obs):
+    print('svcBackToWork')
     actionQueue = Queue()
 
     MineralFields = searchUnitScreen(obs, units.Neutral.MineralField, 3)
@@ -92,6 +108,11 @@ def moveCarmeraToPlayerSelf_atomicOp(obs):
 
 
 def chooseARandomScv_atomicOp(obs):
+    # 找寻空闲工人
+    print('chooseARandomScv_atomicOp')
+    if obs.observation['player'][7] != 0:
+        return actions.FunctionCall(actions.FUNCTIONS.select_idle_worker.id, [[0]])
+
     SCVs = searchUnitScreen(obs, units.Terran.SCV, 1)
 
     if len(SCVs):
@@ -104,6 +125,7 @@ def chooseARandomScv_atomicOp(obs):
 
 
 def chooseARandomScv(obs):
+
     actionQueue = Queue()
 
     actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
@@ -122,6 +144,7 @@ def chooseARandomScv(obs):
 
 
 def buildBarracks(obs):
+    print('buildBarracks')
     actionQueue = Queue()
 
     actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
@@ -132,8 +155,9 @@ def buildBarracks(obs):
     actionQueue.put(chooseARandomScv_atomicOp(obs))
 
     supplyDepots = searchUnitScreen(obs, units.Terran.SupplyDepot, 1)
+    Barracks = searchUnitScreen(obs,units.Terran.Barracks,1)
 
-    if len(supplyDepots):
+    if len(supplyDepots) and (len(Barracks) < 2):
         seed = random.randint(0, len(supplyDepots) - 1)
         target = chooseARandomPlace(supplyDepots[seed].x, supplyDepots[seed].y)
         actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Build_Barracks_screen.id,
@@ -146,6 +170,7 @@ def buildBarracks(obs):
 
 
 def buildSupplydepot(obs):
+    print('buildSupplydepot')
     actionQueue = Queue()
     actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
 
@@ -166,9 +191,10 @@ def buildSupplydepot(obs):
 
 
 def trainMarines(obs):
+    print('trainMarines')
     actionQueue = Queue()
     # 将摄像机随机移动到有己方单位的地方
-    actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
+    #actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
 
     Barracks = searchUnitScreen(obs, units.Terran.Barracks, 1)
     # 找寻是否当前选择的地方有己方兵营
@@ -176,10 +202,73 @@ def trainMarines(obs):
         ran = random.randint(0, len(Barracks) - 1)
         target = [Barracks[ran].x, Barracks[ran].y]
 
-        actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.select_point.id, [[0], target]))
+        actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.select_point.id, [[2], target]))
+
+        if needFood(obs):
+            return needFood(obs)
 
         actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Train_Marine_quick.id, [_NOT_QUEUED]))
         return actionQueue
 
     else:
         return buildBarracks(obs)
+
+
+def trainSCVs(obs):
+    print('trainSCVs')
+    actionQueue = Queue()
+    # 将摄像机随机移动到有己方单位的地方
+    actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
+
+    CommandCenter = searchUnitScreen(obs, units.Terran.CommandCenter, 1)
+    # 找寻是否当前选择的地方有己方兵营
+    if len(CommandCenter):
+        ran = random.randint(0, len(CommandCenter) - 1)
+        target = [CommandCenter[ran].x, CommandCenter[ran].y]
+
+        actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.select_point.id, [[2], target]))
+
+        # MineralFields = searchUnitScreen(obs, units.Neutral.MineralField, 3)
+        # MineralField750s = searchUnitScreen(obs, units.Neutral.MineralField750, 3)
+
+        # if len(MineralFields):
+        #     ran = random.randint(0, len(CommandCenter) - 1)
+        #     target = [MineralFields[ran].x, MineralFields[ran].y]
+        #     actionQueue.put(
+        #         actions.FunctionCall(actions.FUNCTIONS.Rally_CommandCenter_screen.id, [_NOT_QUEUED, target]))
+        # elif len(MineralField750s):
+        #     ran = random.randint(0, len(CommandCenter) - 1)
+        #     target = [MineralField750s[ran].x, MineralField750s[ran].y]
+        #     actionQueue.put(
+        #         actions.FunctionCall(actions.FUNCTIONS.Rally_CommandCenter_screen.id, [_NOT_QUEUED, target]))
+
+        if needFood(obs):
+            return needFood(obs)
+
+        actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Train_SCV_quick.id, [_NOT_QUEUED]))
+        return actionQueue
+
+    else:
+        return actions.FunctionCall(actions.FUNCTIONS.no_op.id, [])
+
+
+def attackRandom(obs):
+    print('attackRandom')
+    actionQueue = Queue()
+    # 将摄像机随机移动到有己方单位的地方
+    #actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
+    if obs.observation['player'][8] > 10:
+        if findAnyEmeies(obs):
+            target = findAnyEmeies(obs)
+            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.select_army.id, [0]))
+            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Attack_minimap.id, [_NOT_QUEUED, target]))
+        else:
+            random_x = random.randint(0, 63)
+            random_y = random.randint(0, 63)
+            target = [random_x, random_y]
+            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.select_army.id, [0]))
+            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Attack_minimap.id, [_NOT_QUEUED, target]))
+
+        return actionQueue
+
+    return None
