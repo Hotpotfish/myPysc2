@@ -60,12 +60,12 @@ class myAgent(base_agent.BaseAgent):
     def step(self, obs):
         super(myAgent, self).step(obs)
 
-        self.inQueue(macro_operation.chooseARandomScv(obs))
+        # self.inQueue(macro_operation.chooseARandomScv(obs))
 
-        self.inQueue(macro_operation.buildSupplydepot(obs))
-        #
+        # self.inQueue(macro_operation.buildSupplydepot(obs))
+
         self.inQueue(macro_operation.buildBarracks(obs))
-        #
+
         self.inQueue(macro_operation.trainMarines(obs))
         self.inQueue(macro_operation.svcBackToWork(obs))
         self.inQueue(macro_operation.trainSCVs(obs))
@@ -77,36 +77,35 @@ class myAgent(base_agent.BaseAgent):
 
 
 def main(unused_argv):
-    agent1 = myAgent()
-    agent2 = myAgent()
+    agent = myAgent()
     try:
         while True:
             with sc2_env.SC2Env(
                     map_name="Simple96",
 
                     players=[sc2_env.Agent(sc2_env.Race.terran),
-                             sc2_env.Agent(sc2_env.Race.terran)],
-                             # sc2_env.Bot(sc2_env.Race.random,
-                             #             sc2_env.Difficulty.very_easy)],
+                             sc2_env.Bot(sc2_env.Race.random,
+                                         sc2_env.Difficulty.very_easy)],
                     agent_interface_format=features.AgentInterfaceFormat(
-                        feature_dimensions=features.Dimensions(screen=84, minimap=64),
-                        use_feature_units=True),
+                        feature_dimensions=features.Dimensions(screen=macro_operation.screenSize,
+                                                               minimap=macro_operation.minimapSize),
 
-                    step_mul=8,
+                        use_feature_units=True,
+                    camera_width_world_units=64),
+
+                    step_mul=4,
                     game_steps_per_episode=0,
                     realtime=False,
                     visualize=True) as env:
 
-                agent1.setup(env.observation_spec(), env.action_spec())
-                agent2.setup(env.observation_spec(), env.action_spec())
+                agent.setup(env.observation_spec(), env.action_spec())
 
                 timesteps = env.reset()
-                agent1.reset()
-                agent2.reset()
+                agent.reset()
 
                 while True:
-                    step_actions = [agent1.step(timesteps[0]),
-                                    agent2.step(timesteps[0])]
+                    step_actions = [agent.step(timesteps[0])
+                                    ]
                     if timesteps[0].last():
                         break
                     timesteps = env.step(step_actions)
