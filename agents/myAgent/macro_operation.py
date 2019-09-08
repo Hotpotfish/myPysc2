@@ -5,24 +5,43 @@ from pysc2.lib import units
 from queue import Queue
 import numpy as np
 
+
 _NOT_QUEUED = [0]
 _QUEUED = [1]
 
-screenSize = 127
-minimapSize = 63
+screenSize = 256
+minimapSize = 64
+
 
 # def checkTarget(target):
 
 
-def findAnyEmeies(obs):
-    ran = random.randint(0, minimapSize)
-    enemy_y, enemy_x = (obs.observation['feature_minimap'][features.MINIMAP_FEATURES.player_relative.index] == 4).nonzero()
-    if enemy_y.any():
+def findAnyEnemies(obs):
+    # enemy_y, enemy_x = (obs.observation['feature_screen'][
+    #                         features.SCREEN_FEATURES.player_relative.index] == features.PlayerRelative.ENEMY).nonzero()
+    # enemies = list(zip(enemy_x, enemy_y))
+    #
+    # if enemies:
+    #     target = enemies[np.argmax(np.array(enemies)[:, 1])]
+    #     return target
+    #
+    # return None
+    feature_units = obs.observation['feature_units']
+    enemies = []
 
-        target = [enemy_x[ran], enemy_y[ran]]
-        return target
+    for i in range(0, len(feature_units)):
+        if feature_units[i][1] == features.PlayerRelative.ENEMY:
+            enemies.append(feature_units[i])
 
-    return None
+    if enemies:
+        ran = random.randint(0, len(enemies) - 1)
+
+        enemy = enemies[ran]
+
+        return [enemy.x, enemy.y]
+
+    else:
+        return None
 
 
 def needFood(obs):
@@ -67,8 +86,6 @@ def searchUnitScreen(obs, unitType, alliance):
         if feature_units[i][0] == int(unitType) and feature_units[i][1] == alliance:
             examples.append(feature_units[i])
 
-    # examples = (unit for unit in raw_units if unit[0] == int(unitType) and unit[1] == alliance)
-
     return examples
 
 
@@ -92,11 +109,11 @@ def svcBackToWork(obs):
         if len(MineralFields):
             ran = random.randint(0, len(MineralFields) - 1)
             target = [MineralFields[ran].x, MineralFields[ran].y]
-            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Harvest_Gather_screen.id, [_NOT_QUEUED, target]))
+            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Harvest_Gather_screen.id, [_QUEUED, target]))
         else:
             ran = random.randint(0, len(MineralField750s) - 1)
             target = [MineralField750s[ran].x, MineralField750s[ran].y]
-            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Harvest_Gather_screen.id, [_NOT_QUEUED, target]))
+            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Harvest_Gather_screen.id, [_QUEUED, target]))
 
         return actionQueue
     else:
@@ -132,10 +149,9 @@ def chooseARandomScv_atomicOp(obs):
 
 
 def chooseARandomScv(obs):
-
     actionQueue = Queue()
 
-    actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
+    # actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
 
     SCVs = searchUnitScreen(obs, units.Terran.SCV, 1)
 
@@ -154,7 +170,7 @@ def buildBarracks(obs):
     print('buildBarracks')
     actionQueue = Queue()
 
-    actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
+    # actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
 
     if not chooseARandomScv_atomicOp(obs):
         return None
@@ -162,13 +178,13 @@ def buildBarracks(obs):
     actionQueue.put(chooseARandomScv_atomicOp(obs))
 
     supplyDepots = searchUnitScreen(obs, units.Terran.SupplyDepot, 1)
-    Barracks = searchUnitScreen(obs,units.Terran.Barracks,1)
+    Barracks = searchUnitScreen(obs, units.Terran.Barracks, 1)
 
     if len(supplyDepots) and (len(Barracks) < 2):
         seed = random.randint(0, len(supplyDepots) - 1)
         target = chooseARandomPlace(supplyDepots[seed].x, supplyDepots[seed].y)
         actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Build_Barracks_screen.id,
-                                             [_NOT_QUEUED, target]))
+                                             [_QUEUED, target]))
 
         return actionQueue
 
@@ -179,7 +195,7 @@ def buildBarracks(obs):
 def buildSupplydepot(obs):
     print('buildSupplydepot')
     actionQueue = Queue()
-    actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
+    # actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
 
     if not chooseARandomScv_atomicOp(obs):
         return None
@@ -191,7 +207,7 @@ def buildSupplydepot(obs):
         seed = random.randint(0, len(commandCenters) - 1)
         target = chooseARandomPlace(commandCenters[seed].x, commandCenters[seed].y)
         actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Build_SupplyDepot_screen.id,
-                                             [_NOT_QUEUED, target]))
+                                             [_QUEUED, target]))
         return actionQueue
 
     return None
@@ -201,7 +217,7 @@ def trainMarines(obs):
     print('trainMarines')
     actionQueue = Queue()
     # 将摄像机随机移动到有己方单位的地方
-    actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
+    # actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
 
     Barracks = searchUnitScreen(obs, units.Terran.Barracks, 1)
     # 找寻是否当前选择的地方有己方兵营
@@ -225,7 +241,7 @@ def trainSCVs(obs):
     print('trainSCVs')
     actionQueue = Queue()
     # 将摄像机随机移动到有己方单位的地方
-    actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
+    # actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
 
     CommandCenter = searchUnitScreen(obs, units.Terran.CommandCenter, 1)
     SCVs = searchUnitScreen(obs, units.Terran.SCV, 1)
@@ -247,21 +263,23 @@ def trainSCVs(obs):
 
 
 def attackRandom(obs):
-    print('attackRandom')
+
     actionQueue = Queue()
     # 将摄像机随机移动到有己方单位的地方
-    actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
-    if obs.observation['player'][8] > 2:
-        if findAnyEmeies(obs):
-            target = findAnyEmeies(obs)
-            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.select_army.id, [0]))
-            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Attack_minimap.id, [_NOT_QUEUED, target]))
+    # actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
+    if obs.observation['player'][8] > 0:
+        if findAnyEnemies(obs):
+            target = findAnyEnemies(obs)
+            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.select_army.id, [[0]]))
+            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Attack_screen .id, [_NOT_QUEUED, target]))
+            # actionQueue.put(actions.FUNCTIONS.Attack_screen("now", target))
         else:
-            random_x = random.randint(0, minimapSize)
-            random_y = random.randint(0, minimapSize)
+            print('attackRandom')
+            random_x = random.randint(0, screenSize - 1)
+            random_y = random.randint(0, screenSize - 1)
             target = [random_x, random_y]
-            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.select_army.id, [0]))
-            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Attack_minimap.id, [_NOT_QUEUED, target]))
+            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.select_army.id, [[0]]))
+            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Attack_screen .id, [_NOT_QUEUED, target]))
 
         return actionQueue
 

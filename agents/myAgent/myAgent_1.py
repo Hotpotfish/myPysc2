@@ -32,6 +32,9 @@ class myAgent(base_agent.BaseAgent):
         if not actionQueue:
             return -1
 
+        if self.macroOpQueue.qsize() >= 1:
+            return -2
+
         self.macroOpQueue.put(actionQueue)
 
         return 0
@@ -61,17 +64,17 @@ class myAgent(base_agent.BaseAgent):
         super(myAgent, self).step(obs)
 
         # self.inQueue(macro_operation.chooseARandomScv(obs))
-
+        #
         # self.inQueue(macro_operation.buildSupplydepot(obs))
-
-        self.inQueue(macro_operation.buildBarracks(obs))
-
-        self.inQueue(macro_operation.trainMarines(obs))
-        self.inQueue(macro_operation.svcBackToWork(obs))
-        self.inQueue(macro_operation.trainSCVs(obs))
-        # self.inQueue(macro_operation.attackRandom(obs))
+        #
+        # self.inQueue(macro_operation.buildBarracks(obs))
+        #
+        # self.inQueue(macro_operation.trainMarines(obs))
+        # self.inQueue(macro_operation.svcBackToWork(obs))
+        # self.inQueue(macro_operation.trainSCVs(obs))
+        self.inQueue(macro_operation.attackRandom(obs))
         f = self.opperation(obs)
-        print(f)
+        # print(f)
 
         return f
 
@@ -81,31 +84,26 @@ def main(unused_argv):
     try:
         while True:
             with sc2_env.SC2Env(
-                    map_name="Simple96",
-
-                    players=[sc2_env.Agent(sc2_env.Race.terran),
-                             sc2_env.Bot(sc2_env.Race.random,
-                                         sc2_env.Difficulty.very_easy)],
+                    map_name="DefeatRoaches",
+                    players=[sc2_env.Agent(race=sc2_env.Race.terran, name='agent'), ],
+                    # sc2_env.Bot(sc2_env.Race.random,
+                    #             sc2_env.Difficulty.very_easy)],
                     agent_interface_format=features.AgentInterfaceFormat(
                         feature_dimensions=features.Dimensions(screen=macro_operation.screenSize,
                                                                minimap=macro_operation.minimapSize),
-
-                        use_feature_units=True,
-                    camera_width_world_units=64),
-
+                        # camera_width_world_units=64,
+                        use_feature_units=True),
                     step_mul=4,
                     game_steps_per_episode=0,
-                    realtime=False,
+                    realtime=True,
                     visualize=True) as env:
 
                 agent.setup(env.observation_spec(), env.action_spec())
-
                 timesteps = env.reset()
                 agent.reset()
 
                 while True:
-                    step_actions = [agent.step(timesteps[0])
-                                    ]
+                    step_actions = [agent.step(timesteps[0])]
                     if timesteps[0].last():
                         break
                     timesteps = env.step(step_actions)

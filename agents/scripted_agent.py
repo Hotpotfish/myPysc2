@@ -169,13 +169,13 @@ def main(unused_argv):
               players=[sc2_env.Agent(sc2_env.Race.terran)],
               agent_interface_format=features.AgentInterfaceFormat(
                 feature_dimensions=features.Dimensions(screen=64, minimap=64),
-                use_raw_units=True
+                # use_raw_units=True
 
               ),
 
               step_mul=1,
               game_steps_per_episode=0,
-              realtime=True,
+              realtime=False,
               visualize=True) as env:
 
         agent.setup(env.observation_spec(), env.action_spec())
