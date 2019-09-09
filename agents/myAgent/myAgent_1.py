@@ -1,5 +1,3 @@
-import random
-import math
 from queue import Queue
 from absl import app
 
@@ -9,6 +7,7 @@ from pysc2.agents import base_agent
 from pysc2.env import sc2_env
 from pysc2.lib import actions
 from pysc2.lib import features
+import pysc2.agents.myAgent.smart_actions as sa
 
 _NO_OP = actions.FUNCTIONS.no_op.id
 _NOT_QUEUED = [0]
@@ -24,41 +23,41 @@ class myAgent(base_agent.BaseAgent):
         self.macroOpQueue = Queue()
 
         # 宏操作中原子的小队列
-        self.tempMarcoOp = Queue()
+        self.tempMarcoOp = None
 
-    def inQueue(self, actionQueue):
+        self.tempMarcoOp_step = 0
 
-        # 空操作跳过
-        if not actionQueue:
-            return -1
+    def inQueue(self, funtionNumber):
 
-        if self.macroOpQueue.qsize() >= 1:
-            return -2
-
-        self.macroOpQueue.put(actionQueue)
+        self.macroOpQueue.put(funtionNumber)
 
         return 0
 
     def opperation(self, obs):
 
         # 宏操作队列判空
-        if self.macroOpQueue.empty() and self.tempMarcoOp.empty():
+        if self.macroOpQueue.empty() and self.tempMarcoOp is None:
             return actions.FunctionCall(_NO_OP, [])
 
-        if self.tempMarcoOp.empty():
+        if self.tempMarcoOp is None:
             self.tempMarcoOp = self.macroOpQueue.get()
 
-        atomicOp = self.tempMarcoOp.get()
+        if self.tempMarcoOp_step < sa.smart_actions[self.tempMarcoOp][1]:
 
-        if int(atomicOp[0]) in obs.observation['available_actions']:
+            atomicOp = sa.smart_actions[self.tempMarcoOp][0](obs, self.tempMarcoOp_step)
 
-            return atomicOp
+            if atomicOp is not None and int(atomicOp[0]) in obs.observation['available_actions']:
 
-        else:
+                self.tempMarcoOp_step += 1
 
-            self.tempMarcoOp.queue.clear()
+                return atomicOp
 
-            return actions.FunctionCall(_NO_OP, [])
+
+        self.tempMarcoOp = None
+
+        self.tempMarcoOp_step = 0
+
+        return actions.FunctionCall(_NO_OP, [])
 
     def step(self, obs):
         super(myAgent, self).step(obs)
@@ -70,9 +69,9 @@ class myAgent(base_agent.BaseAgent):
         # self.inQueue(macro_operation.buildBarracks(obs))
 
         # self.inQueue(macro_operation.trainMarines(obs))
-        # self.inQueue(macro_operation.svcBackToWork(obs))
+        self.inQueue(6)
         # self.inQueue(macro_operation.trainSCVs(obs))
-        self.inQueue(macro_operation.attackRandom(obs))
+        # self.inQueue(macro_operation.attackRandom(obs))
         f = self.opperation(obs)
         # print(f)
 
@@ -84,8 +83,8 @@ def main(unused_argv):
     try:
         while True:
             with sc2_env.SC2Env(
-                    map_name="DefeatZerglingsAndBanelings",
-                    players=[sc2_env.Agent(race=sc2_env.Race.terran, name='agent'), ],
+                    map_name="FindAndDefeatZerglings",
+                    players=[sc2_env.Agent(race=sc2_env.Race.terran, name='agent'),],
                     # sc2_env.Bot(sc2_env.Race.random,
                     #             sc2_env.Difficulty.very_easy)],
                     agent_interface_format=features.AgentInterfaceFormat(
@@ -97,7 +96,7 @@ def main(unused_argv):
                     step_mul=4,
                     game_steps_per_episode=0,
                     realtime=True,
-                    visualize=True,
+                    visualize=False,
 
             ) as env:
 
@@ -107,8 +106,8 @@ def main(unused_argv):
 
                 while True:
                     step_actions = [agent.step(timesteps[0])]
-                    if timesteps[0].last():
-                        break
+                    # if timesteps[0].last():
+                    #     break
                     timesteps = env.step(step_actions)
 
     except KeyboardInterrupt:
