@@ -5,7 +5,6 @@ from pysc2.lib import units
 from queue import Queue
 import numpy as np
 
-
 _NOT_QUEUED = [0]
 _QUEUED = [1]
 
@@ -13,35 +12,65 @@ screenSize = 256
 minimapSize = 64
 
 
-# def checkTarget(target):
+def ownMineralFields(MineralFields, CommandCenter):
+    # if len(CommandCenter) and len(MineralFields):
+    #     MineralFields = np.array(MineralFields)[:, 12:14]
+    #     CommandCenter = np.array(CommandCenter)[:, 12:14]
+    #     for i in range(0, len(CommandCenter)):
+    #         Command = CommandCenter[i]
+    #         for j in range(0, len(MineralFields[0])):
+    #             Mineral = MineralFields[j]
+    #
+    #             if np.sqrt(np.sum(np.square(Command - Mineral))) <= 20:
+    #                 return Mineral
+    #
+    # else:
+    #
+    #     return None
+    if len(CommandCenter) and len(MineralFields):
+        MineralFields = np.array(MineralFields)
+        CommandCenter = np.array(CommandCenter)
+        for i in range(0, len(CommandCenter)):
+            Command = np.array([CommandCenter[i].x, CommandCenter[i].y])
+            for j in range(0, len(MineralFields)):
+                Mineral = np.array([MineralFields[j].x, MineralFields[j].y])
+
+                if np.sqrt(np.sum(np.square(Command - Mineral))) <= 20:
+                    return Mineral
+
+    else:
+
+        return None
 
 
 def findAnyEnemies(obs):
-    # enemy_y, enemy_x = (obs.observation['feature_screen'][
-    #                         features.SCREEN_FEATURES.player_relative.index] == features.PlayerRelative.ENEMY).nonzero()
-    # enemies = list(zip(enemy_x, enemy_y))
-    #
-    # if enemies:
-    #     target = enemies[np.argmax(np.array(enemies)[:, 1])]
-    #     return target
-    #
-    # return None
-    feature_units = obs.observation['feature_units']
-    enemies = []
-
-    for i in range(0, len(feature_units)):
-        if feature_units[i][1] == features.PlayerRelative.ENEMY:
-            enemies.append(feature_units[i])
+    enemy_y, enemy_x = (obs.observation['feature_screen'][
+                            features.SCREEN_FEATURES.player_relative.index] == features.PlayerRelative.ENEMY).nonzero()
+    enemies = list(zip(enemy_x, enemy_y))
 
     if enemies:
-        ran = random.randint(0, len(enemies) - 1)
-
-        enemy = enemies[ran]
-
-        return [enemy.x, enemy.y]
+        target = enemies[np.argmax(np.array(enemies)[:, 1])]
+        return target
 
     else:
+
         return None
+    # feature_units = obs.observation['feature_units']
+    # enemies = []
+    #
+    # for i in range(0, len(feature_units)):
+    #     if feature_units[i][1] == features.PlayerRelative.ENEMY:
+    #         enemies.append(feature_units[i])
+    #
+    # if enemies:
+    #     ran = random.randint(0, len(enemies) - 1)
+    #
+    #     enemy = enemies[ran]
+    #
+    #     return [enemy.x, enemy.y]
+    #
+    # else:
+    #     return None
 
 
 def needFood(obs):
@@ -52,8 +81,8 @@ def needFood(obs):
 
 
 def chooseARandomPlace(input_x, input_y):
-    add_y = random.randint(-20, 20)
-    add_x = random.randint(-20, 20)
+    add_y = random.randint(-10, 10)
+    add_x = random.randint(-10, 10)
 
     if input_x + add_x >= screenSize:
 
@@ -79,14 +108,33 @@ def chooseARandomPlace(input_x, input_y):
 
 
 def searchUnitScreen(obs, unitType, alliance):
-    feature_units = obs.observation['feature_units']
+    # feature_units = obs.observation['feature_units']
+    # examples = []
+    #
+    # for i in range(0, len(feature_units)):
+    #     if feature_units[i][0] == int(unitType) and feature_units[i][1] == alliance:
+    #         examples.append(feature_units[i])
+    #
+    # return examples
+    class point:
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+    feature_screen = obs.observation['feature_screen']
     examples = []
 
-    for i in range(0, len(feature_units)):
-        if feature_units[i][0] == int(unitType) and feature_units[i][1] == alliance:
-            examples.append(feature_units[i])
+    units_y, units_x = (feature_screen[features.SCREEN_FEATURES.unit_type.index] == int(unitType)).nonzero()
 
-    return examples
+    if units_y is not None:
+        for i in range(0, len(units_y)):
+            if feature_screen[features.SCREEN_FEATURES.player_relative.index][units_y[i]][units_x[i]] == alliance:
+                examples.append(point(units_x[i], units_y[i]))
+
+    if examples is not None:
+        return examples
+    else:
+        return None
 
 
 def noOP():
@@ -101,21 +149,30 @@ def svcBackToWork(obs):
 
     MineralFields = searchUnitScreen(obs, units.Neutral.MineralField, 3)
     MineralField750s = searchUnitScreen(obs, units.Neutral.MineralField750, 3)
+    CommandCenter = searchUnitScreen(obs, units.Terran.CommandCenter, 1)
 
     if obs.observation['player'][7] != 0 and (len(MineralFields) or len(MineralField750s)):
         # 2代表选择所有空闲工人
         actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.select_idle_worker.id, [[2]]))
 
-        if len(MineralFields):
-            ran = random.randint(0, len(MineralFields) - 1)
-            target = [MineralFields[ran].x, MineralFields[ran].y]
-            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Harvest_Gather_screen.id, [_QUEUED, target]))
-        else:
-            ran = random.randint(0, len(MineralField750s) - 1)
-            target = [MineralField750s[ran].x, MineralField750s[ran].y]
-            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Harvest_Gather_screen.id, [_QUEUED, target]))
+        if MineralFields is not None:
+            target = ownMineralFields(MineralFields, CommandCenter)
+            if target is not None:
+                # ran = random.randint(0, len(MineralFields) - 1)
+                # target = [MineralFields[ran].x, MineralFields[ran].y]
+                actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Harvest_Gather_screen.id, [_QUEUED, target]))
 
-        return actionQueue
+                return actionQueue
+        if MineralField750s is not None:
+            target = ownMineralFields(MineralField750s, CommandCenter)
+            if target is not None:
+                # ran = random.randint(0, len(MineralField750s) - 1)
+                # target = [MineralField750s[ran].x, MineralField750s[ran].y]
+                actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Harvest_Gather_screen.id, [_QUEUED, target]))
+            return actionQueue
+
+        return None
+
     else:
         return None
 
@@ -139,7 +196,7 @@ def chooseARandomScv_atomicOp(obs):
 
     SCVs = searchUnitScreen(obs, units.Terran.SCV, 1)
 
-    if len(SCVs):
+    if SCVs is not None:
         ran = random.randint(0, len(SCVs) - 1)
         target = [SCVs[ran].x, SCVs[ran].y]
 
@@ -263,7 +320,6 @@ def trainSCVs(obs):
 
 
 def attackRandom(obs):
-
     actionQueue = Queue()
     # 将摄像机随机移动到有己方单位的地方
     # actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
@@ -271,7 +327,7 @@ def attackRandom(obs):
         if findAnyEnemies(obs):
             target = findAnyEnemies(obs)
             actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.select_army.id, [[0]]))
-            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Attack_screen .id, [_NOT_QUEUED, target]))
+            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Attack_screen.id, [_NOT_QUEUED, target]))
             # actionQueue.put(actions.FUNCTIONS.Attack_screen("now", target))
         else:
             print('attackRandom')
@@ -279,7 +335,7 @@ def attackRandom(obs):
             random_y = random.randint(0, screenSize - 1)
             target = [random_x, random_y]
             actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.select_army.id, [[0]]))
-            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Attack_screen .id, [_NOT_QUEUED, target]))
+            actionQueue.put(actions.FunctionCall(actions.FUNCTIONS.Attack_screen.id, [_QUEUED, target]))
 
         return actionQueue
 

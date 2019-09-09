@@ -64,11 +64,11 @@ class myAgent(base_agent.BaseAgent):
         super(myAgent, self).step(obs)
 
         # self.inQueue(macro_operation.chooseARandomScv(obs))
-        #
+
         # self.inQueue(macro_operation.buildSupplydepot(obs))
-        #
+
         # self.inQueue(macro_operation.buildBarracks(obs))
-        #
+
         # self.inQueue(macro_operation.trainMarines(obs))
         # self.inQueue(macro_operation.svcBackToWork(obs))
         # self.inQueue(macro_operation.trainSCVs(obs))
@@ -84,19 +84,22 @@ def main(unused_argv):
     try:
         while True:
             with sc2_env.SC2Env(
-                    map_name="DefeatRoaches",
+                    map_name="DefeatZerglingsAndBanelings",
                     players=[sc2_env.Agent(race=sc2_env.Race.terran, name='agent'), ],
                     # sc2_env.Bot(sc2_env.Race.random,
                     #             sc2_env.Difficulty.very_easy)],
                     agent_interface_format=features.AgentInterfaceFormat(
                         feature_dimensions=features.Dimensions(screen=macro_operation.screenSize,
                                                                minimap=macro_operation.minimapSize),
-                        # camera_width_world_units=64,
-                        use_feature_units=True),
+                        camera_width_world_units=macro_operation.screenSize,
+
+                    ),
                     step_mul=4,
                     game_steps_per_episode=0,
                     realtime=True,
-                    visualize=True) as env:
+                    visualize=True,
+
+            ) as env:
 
                 agent.setup(env.observation_spec(), env.action_spec())
                 timesteps = env.reset()
