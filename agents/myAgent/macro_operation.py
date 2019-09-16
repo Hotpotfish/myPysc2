@@ -49,7 +49,7 @@ def findAnyEnemies(obs):
     enemies = list(zip(enemy_x, enemy_y))
 
     if enemies:
-        target = enemies[np.argmin(np.array(enemies)[:, 1])]
+        target = enemies[np.argmax(np.array(enemies)[:, 1])]
         return target
 
     else:
@@ -240,7 +240,7 @@ def buildBarracks(obs, step):
 
     if step == 1:
 
-        if len(supplyDepots) and (len(Barracks) < 2):
+        if len(supplyDepots) and (len(Barracks) < 6):
             seed = random.randint(0, len(supplyDepots) - 1)
             target = chooseARandomPlace(supplyDepots[seed].x, supplyDepots[seed].y)
             return actions.FunctionCall(actions.FUNCTIONS.Build_Barracks_screen.id, [_QUEUED, target])

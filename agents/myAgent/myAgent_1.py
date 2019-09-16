@@ -8,6 +8,8 @@ from pysc2.env import sc2_env
 from pysc2.lib import actions
 from pysc2.lib import features
 import pysc2.agents.myAgent.smart_actions as sa
+import pysc2.agents.myAgent.q_learing_table as q_learing_table
+import random
 
 _NO_OP = actions.FUNCTIONS.no_op.id
 _NOT_QUEUED = [0]
@@ -27,9 +29,17 @@ class myAgent(base_agent.BaseAgent):
 
         self.tempMarcoOp_step = 0
 
-    def inQueue(self, funtionNumber):
+        self.qlearn = q_learing_table.QLearningTable(actions=list(range(len(sa.smart_actions))))
 
-        self.macroOpQueue.put(funtionNumber)
+        self.previous_killed_unit_score = 0
+        self.previous_killed_building_score = 0
+
+        self.previous_action = None
+        self.previous_state = None
+
+    def inQueue(self, functionNumber):
+
+        self.macroOpQueue.put(functionNumber)
 
         return 0
 
@@ -47,11 +57,9 @@ class myAgent(base_agent.BaseAgent):
             atomicOp = sa.smart_actions[self.tempMarcoOp][0](obs, self.tempMarcoOp_step)
 
             if atomicOp is not None and int(atomicOp[0]) in obs.observation['available_actions']:
-
                 self.tempMarcoOp_step += 1
 
                 return atomicOp
-
 
         self.tempMarcoOp = None
 
@@ -62,16 +70,11 @@ class myAgent(base_agent.BaseAgent):
     def step(self, obs):
         super(myAgent, self).step(obs)
 
-        # self.inQueue(macro_operation.chooseARandomScv(obs))
+        # ran = random.randint(0, 6)
+        # self.inQueue(ran)
+        self.inQueue(5)
 
-        # self.inQueue(macro_operation.buildSupplydepot(obs))
 
-        # self.inQueue(macro_operation.buildBarracks(obs))
-
-        # self.inQueue(macro_operation.trainMarines(obs))
-        self.inQueue(6)
-        # self.inQueue(macro_operation.trainSCVs(obs))
-        # self.inQueue(macro_operation.attackRandom(obs))
         f = self.opperation(obs)
         # print(f)
 
@@ -83,19 +86,21 @@ def main(unused_argv):
     try:
         while True:
             with sc2_env.SC2Env(
-                    map_name="FindAndDefeatZerglings",
-                    players=[sc2_env.Agent(race=sc2_env.Race.terran, name='agent'),],
-                    # sc2_env.Bot(sc2_env.Race.random,
-                    #             sc2_env.Difficulty.very_easy)],
+                    map_name="Flat96",
+                    players=[sc2_env.Agent(race=sc2_env.Race.terran, name='agent'),
+                    sc2_env.Bot(sc2_env.Race.random,
+                                sc2_env.Difficulty.very_easy)],
                     agent_interface_format=features.AgentInterfaceFormat(
                         feature_dimensions=features.Dimensions(screen=macro_operation.screenSize,
                                                                minimap=macro_operation.minimapSize),
                         camera_width_world_units=macro_operation.screenSize,
+                        use_unit_counts=True,
 
                     ),
+
                     step_mul=4,
                     game_steps_per_episode=0,
-                    realtime=True,
+                    realtime=False,
                     visualize=False,
 
             ) as env:
