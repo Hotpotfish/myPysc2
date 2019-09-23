@@ -15,6 +15,9 @@ _NO_OP = actions.FUNCTIONS.no_op.id
 _NOT_QUEUED = [0]
 _QUEUED = [1]
 
+KILL_UNIT_REWARD = 0.2
+KILL_BUILDING_REWARD = 0.5
+
 
 class myAgent(base_agent.BaseAgent):
 
@@ -69,14 +72,30 @@ class myAgent(base_agent.BaseAgent):
 
     def step(self, obs):
         super(myAgent, self).step(obs)
+        current_state = q_learing_table.currentState(obs).getData()
 
-        # ran = random.randint(0, 6)
-        # self.inQueue(ran)
-        self.inQueue(5)
+        killed_unit_score = obs.observation['score_cumulative'][5]
+        killed_building_score = obs.observation['score_cumulative'][6]
 
+        if self.previous_action is not None:
+            reward = 0
+
+            if killed_unit_score > self.previous_killed_unit_score:
+                reward += KILL_UNIT_REWARD
+
+            if killed_building_score > self.previous_killed_building_score:
+                reward += KILL_BUILDING_REWARD
+
+            self.qlearn.learn(str(self.previous_state), self.previous_action, reward, str(current_state))
+        rl_action = self.qlearn.choose_action(str(current_state))
+        self.inQueue(rl_action)
+
+        self.previous_killed_unit_score = killed_unit_score
+        self.previous_killed_building_score = killed_building_score
+        self.previous_state = current_state
+        self.previous_action = rl_action
 
         f = self.opperation(obs)
-        # print(f)
 
         return f
 
@@ -88,8 +107,8 @@ def main(unused_argv):
             with sc2_env.SC2Env(
                     map_name="Flat96",
                     players=[sc2_env.Agent(race=sc2_env.Race.terran, name='agent'),
-                    sc2_env.Bot(sc2_env.Race.random,
-                                sc2_env.Difficulty.very_easy)],
+                             sc2_env.Bot(sc2_env.Race.random,
+                                         sc2_env.Difficulty.very_easy)],
                     agent_interface_format=features.AgentInterfaceFormat(
                         feature_dimensions=features.Dimensions(screen=macro_operation.screenSize,
                                                                minimap=macro_operation.minimapSize),
@@ -98,7 +117,7 @@ def main(unused_argv):
 
                     ),
 
-                    step_mul=4,
+                    step_mul=8,
                     game_steps_per_episode=0,
                     realtime=False,
                     visualize=False,
@@ -111,8 +130,8 @@ def main(unused_argv):
 
                 while True:
                     step_actions = [agent.step(timesteps[0])]
-                    # if timesteps[0].last():
-                    #     break
+                    if timesteps[0].last():
+                        break
                     timesteps = env.step(step_actions)
 
     except KeyboardInterrupt:

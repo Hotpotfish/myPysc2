@@ -9,9 +9,12 @@ KILL_BUILDING_REWARD = 0.5
 def unitCount(obs, unitId):
     unit_counts = np.array(obs.observation['unit_counts'])
 
-    unitCount = [uc for uc in unit_counts if uc[0] == unitId][0][1]
+    unitCount = [uc for uc in unit_counts if uc[0] == int(unitId)]
 
-    return unitCount
+    if not len(unitCount):
+        return 0
+    else:
+        return unitCount[0][1]
 
 
 class currentState:
@@ -27,6 +30,9 @@ class currentState:
                      unitCount(obs, units.Terran.Barracks)
                      ]
 
+    def getData(self):
+        return self.data
+
 
 class QLearningTable:
     def __init__(self, actions, learning_rate=0.01, reward_decay=0.9, e_greedy=0.9):
@@ -36,8 +42,7 @@ class QLearningTable:
         self.epsilon = e_greedy
         self.q_table = pd.DataFrame(columns=np.arange(0, len(actions)), dtype=np.float64)
 
-    def choose_action(self, obs):
-        state = str(currentState(obs).data)
+    def choose_action(self, state):
 
         self.check_state_exist(state)
 

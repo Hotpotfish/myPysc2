@@ -144,7 +144,7 @@ def noOP():
 
 
 def svcBackToWork(obs, step):
-    print('svcBackToWork')
+    # print('svcBackToWork')
 
     MineralFields = searchUnitScreen(obs, units.Neutral.MineralField, 3)
     MineralField750s = searchUnitScreen(obs, units.Neutral.MineralField750, 3)
@@ -195,7 +195,7 @@ def moveCarmeraToPlayerSelf_atomicOp(obs):
 
 def chooseARandomScv_atomicOp(obs):
     # 找寻空闲工人
-    print('chooseARandomScv_atomicOp')
+    # print('chooseARandomScv_atomicOp')
     if obs.observation['player'][7] != 0:
         return actions.FunctionCall(actions.FUNCTIONS.select_idle_worker.id, [[0]])
 
@@ -225,7 +225,7 @@ def chooseARandomScv(obs, step):
 
 
 def buildBarracks(obs, step):
-    print('buildBarracks')
+    # print('buildBarracks')
 
     # actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
 
@@ -236,11 +236,11 @@ def buildBarracks(obs, step):
         return chooseARandomScv_atomicOp(obs)
 
     supplyDepots = searchUnitScreen(obs, units.Terran.SupplyDepot, 1)
-    Barracks = searchUnitScreen(obs, units.Terran.Barracks, 1)
+    #Barracks = searchUnitScreen(obs, units.Terran.Barracks, 1)
 
     if step == 1:
 
-        if len(supplyDepots) and (len(Barracks) < 6):
+        if len(supplyDepots) :
             seed = random.randint(0, len(supplyDepots) - 1)
             target = chooseARandomPlace(supplyDepots[seed].x, supplyDepots[seed].y)
             return actions.FunctionCall(actions.FUNCTIONS.Build_Barracks_screen.id, [_QUEUED, target])
@@ -249,7 +249,7 @@ def buildBarracks(obs, step):
 
 
 def buildSupplydepot(obs, step):
-    print('buildSupplydepot')
+    # print('buildSupplydepot')
 
     # actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
 
@@ -271,7 +271,7 @@ def buildSupplydepot(obs, step):
 
 
 def trainMarines(obs, step):
-    print('trainMarines')
+    # print('trainMarines')
 
     # 将摄像机随机移动到有己方单位的地方
     # actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
@@ -294,7 +294,7 @@ def trainMarines(obs, step):
 
 
 def trainSCVs(obs, step):
-    print('trainSCVs')
+    # print('trainSCVs')
 
     # 将摄像机随机移动到有己方单位的地方
     # actionQueue.put(moveCarmeraToPlayerSelf_atomicOp(obs))
@@ -329,7 +329,7 @@ def attack(obs, step):
                 return actions.FunctionCall(actions.FUNCTIONS.Attack_screen.id, [_NOT_QUEUED, target])
             # actionQueue.put(actions.FUNCTIONS.Attack_screen("now", target))
         else:
-            print('attackRandom')
+            # print('attackRandom')
             random_x = random.randint(0, screenSize - 1)
             random_y = random.randint(0, screenSize - 1)
             target = [random_x, random_y]
