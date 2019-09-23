@@ -5,6 +5,7 @@ from pysc2.lib import units
 from queue import Queue
 import numpy as np
 
+
 _NOT_QUEUED = [0]
 _QUEUED = [1]
 
@@ -13,20 +14,7 @@ minimapSize = 64
 
 
 def ownMineralFields(MineralFields, CommandCenter):
-    # if len(CommandCenter) and len(MineralFields):
-    #     MineralFields = np.array(MineralFields)[:, 12:14]
-    #     CommandCenter = np.array(CommandCenter)[:, 12:14]
-    #     for i in range(0, len(CommandCenter)):
-    #         Command = CommandCenter[i]
-    #         for j in range(0, len(MineralFields[0])):
-    #             Mineral = MineralFields[j]
-    #
-    #             if np.sqrt(np.sum(np.square(Command - Mineral))) <= 20:
-    #                 return Mineral
-    #
-    # else:
-    #
-    #     return None
+
     if len(CommandCenter) and len(MineralFields):
         MineralFields = np.array(MineralFields)
         CommandCenter = np.array(CommandCenter)
@@ -35,7 +23,7 @@ def ownMineralFields(MineralFields, CommandCenter):
             for j in range(0, len(MineralFields)):
                 Mineral = np.array([MineralFields[j].x, MineralFields[j].y])
 
-                if np.sqrt(np.sum(np.square(Command - Mineral))) <= 20:
+                if np.sqrt(np.sum(np.square(Command - Mineral))) <= 30:
                     return Mineral
 
     else:
@@ -55,22 +43,7 @@ def findAnyEnemies(obs):
     else:
 
         return None
-    # feature_units = obs.observation['feature_units']
-    # enemies = []
-    #
-    # for i in range(0, len(feature_units)):
-    #     if feature_units[i][1] == features.PlayerRelative.ENEMY:
-    #         enemies.append(feature_units[i])
-    #
-    # if enemies:
-    #     ran = random.randint(0, len(enemies) - 1)
-    #
-    #     enemy = enemies[ran]
-    #
-    #     return [enemy.x, enemy.y]
-    #
-    # else:
-    #     return None
+
 
 
 def needFood(obs):
@@ -201,7 +174,7 @@ def chooseARandomScv_atomicOp(obs):
 
     SCVs = searchUnitScreen(obs, units.Terran.SCV, 1)
 
-    if SCVs is not None:
+    if len(SCVs):
         ran = random.randint(0, len(SCVs) - 1)
         target = [SCVs[ran].x, SCVs[ran].y]
 

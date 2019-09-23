@@ -9,7 +9,8 @@ from pysc2.lib import actions
 from pysc2.lib import features
 import pysc2.agents.myAgent.smart_actions as sa
 import pysc2.agents.myAgent.q_learing_table as q_learing_table
-import random
+import matplotlib.pyplot as plt
+import numpy as np
 
 _NO_OP = actions.FUNCTIONS.no_op.id
 _NOT_QUEUED = [0]
@@ -39,6 +40,8 @@ class myAgent(base_agent.BaseAgent):
 
         self.previous_action = None
         self.previous_state = None
+
+        self.figureData = []
 
     def inQueue(self, functionNumber):
 
@@ -76,6 +79,10 @@ class myAgent(base_agent.BaseAgent):
 
         killed_unit_score = obs.observation['score_cumulative'][5]
         killed_building_score = obs.observation['score_cumulative'][6]
+
+        self.figureData.append([self.steps, killed_unit_score, killed_building_score])
+        # plt.plot(self.steps, killed_unit_score, label='killed_unit_score', linewidth=1, color='g')
+        # plt.plot(self.steps, killed_building_score, label='killed_building_score', linewidth=1, color='r')
 
         if self.previous_action is not None:
             reward = 0
@@ -131,6 +138,12 @@ def main(unused_argv):
                 while True:
                     step_actions = [agent.step(timesteps[0])]
                     if timesteps[0].last():
+                        agent.figureData = np.array(agent.figureData)
+                        plt.plot(agent.figureData[:, 0], agent.figureData[:, 1])
+                        plt.plot(agent.figureData[:, 0], agent.figureData[:, 2])
+
+                        plt.show()
+
                         break
                     timesteps = env.step(step_actions)
 
