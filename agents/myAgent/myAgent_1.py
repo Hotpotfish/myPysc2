@@ -124,9 +124,9 @@ def main(unused_argv):
 
                     ),
 
-                    step_mul=8,
+                    step_mul=0.000000001,
                     game_steps_per_episode=0,
-                    realtime=False,
+                    realtime=True,
                     visualize=False,
 
             ) as env:
@@ -153,3 +153,57 @@ def main(unused_argv):
 
 if __name__ == "__main__":
     app.run(main)
+
+# def main(unused_argv):
+#     agent1 = myAgent()
+#     agent2 = myAgent()
+#     try:
+#         while True:
+#             with sc2_env.SC2Env(
+#                     map_name="Flat96",
+#                     players=[sc2_env.Agent(race=sc2_env.Race.terran, name='agent1'),
+#                              sc2_env.Agent(race=sc2_env.Race.terran, name='agent2')],
+#                     agent_interface_format=features.AgentInterfaceFormat(
+#                         feature_dimensions=features.Dimensions(screen=macro_operation.screenSize,
+#                                                                minimap=macro_operation.minimapSize),
+#                         camera_width_world_units=macro_operation.screenSize,
+#                         use_unit_counts=True,
+#
+#                     ),
+#
+#                     step_mul=8,
+#                     game_steps_per_episode=0,
+#                     realtime=False,
+#                     visualize=False,
+#
+#             ) as env:
+#
+#                 agent1.setup(env.observation_spec(), env.action_spec())
+#                 agent2.setup(env.observation_spec(), env.action_spec())
+#                 timesteps = env.reset()
+#                 agent1.reset()
+#                 agent2.reset()
+#
+#                 while True:
+#                     step_actions = [agent1.step(timesteps[0]),
+#                                     agent2.step(timesteps[1])]
+#                     # if timesteps[0].last():
+#                     #     agent1.figureData = np.array(agent1.figureData)
+#                     #     plt.plot(agent1.figureData[:, 0], agent1.figureData[:, 1])
+#                     #     plt.plot(agent1.figureData[:, 0], agent1.figureData[:, 2])
+#                     #
+#                     #     agent2.figureData = np.array(agent2.figureData)
+#                     #     plt.plot(agent2.figureData[:, 0], agent2.figureData[:, 1])
+#                     #     plt.plot(agent2.figureData[:, 0], agent2.figureData[:, 2])
+#                     #
+#                     #     plt.show()
+#                     #
+#                     #     break
+#                     timesteps = env.step(step_actions)
+#
+#     except KeyboardInterrupt:
+#         pass
+#
+#
+# if __name__ == "__main__":
+#     app.run(main)
